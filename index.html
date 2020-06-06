@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+/*
+.chart rect {
+  fill: steelblue;
+}
+*/
+.chart .legend {
+  fill: black;
+  font: 14px sans-serif;
+  text-anchor: start;
+  font-size: 12px;
+}
+
+.chart text {
+  fill: white;
+  font: 10px sans-serif;
+  text-anchor: end;
+}
+
+.chart .label {
+  fill: black;
+  font: 14px sans-serif;
+  text-anchor: end;
+}
+
+.bar:hover {
+  fill: brown;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+</style>
+<svg class="chart"></svg>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script>
+
+
+var data = {};
+
+d3.csv("graph_FD.csv", function(d) {
+
+
+
+  // callback function
+}, function(error, rows) {
+
+  // console.table(educationalprogramsNest);
+
+  data.labels = educationalprograms;
+
+  data.series = [
+    {
+      label: function(d) { return d["Program"]; }
+
+    }
+  ];
+
+  console.log(data.series);
+
+});
+
+var harddata = {
+  labels: [ 
+    'Total KO', 'Coca Cola',
+    'Fanta', 'Sprite', 'Cappy'
+  ],
+  series: [
+    {
+      label: 'val_1',
+      values: [4000, 700, 400, 500,500]
+    },
+    {
+      label: 'val_2',
+      values: [200, 900, 500, 500,500]
+    },
+    {
+      label: 'mark Val',
+      values: [3000, 800, 900, 500,500]
+    },]
+};
+
+var config = {};
+
+config.svg = {width: 960, height: 500};
+config.margin = {top: 50, right: 10, bottom: 20, left: 40};
+
+config.plot = {
+  width: config.svg.width - config.margin.right - config.margin.left, 
+  height: config.svg.height - config.margin.top - config.margin.bottom
+};
+
+
+var chartWidth       = config.plot.width,
+    barHeight        = 20,
+    groupHeight      = barHeight * harddata.series.length,
+    gapBetweenGroups = 10,
+    spaceForLabels   = 110,
+    spaceForLegend   = 150;
+
+// Zip the series harddata together (first values, second values, etc.)
+var zippedData = [];
+for (var i=0; i<harddata.labels.length; i++) {
+  for (var j=0; j<harddata.series.length; j++) {
+    zippedData.push(harddata.series[j].values[i]);
+  }
+}
+
+// Color scale
+var color = d3.scale.category20();
+var chartHeight = barHeight * zippedData.length + gapBetweenGroups * harddata.labels.length;
+
+var x = d3.scale.linear()
+    .domain([0, d3.max(zippedData)])
+    .range([0, chartWidth]);
+
+var y = d3.scale.linear()
+    .range([chartHeight + gapBetweenGroups, 0]);
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .tickFormat('')
+    .tickSize(0)
+    .orient("left");
+
+// Specify the chart area and dimensions
+var chart = d3.select(".chart")
+    .attr("width", config.svg.width)
+    .attr("height", config.svg.height);
+
+// Create bars
+var bar = chart.selectAll("g")
+    .data(zippedData)
+    .enter().append("g")
+    .attr("transform", function(d, i) {
+      return "translate(" + spaceForLabels + "," + (i * barHeight + gapBetweenGroups * (0.5 + Math.floor(i/harddata.series.length))) + ")";
+    });
+
+// Create rectangles of the correct width
+bar.append("rect")
+    .attr("fill", function(d,i) { return color(i % harddata.series.length); })
+    .attr("class", "bar")
+    .attr("width", x)
+    .attr("height", barHeight - 1);
+
+// Add text label in bar
+bar.append("text")
+    .attr("x", function(d) { return x(d) - 3; })
+    .attr("y", barHeight / 2)
+    .attr("fill", "red")
+    .attr("dy", ".35em")
+    .text(function(d) { return d; });
+
+// Draw labels
+bar.append("text")
+    .attr("class", "label")
+    .attr("x", function(d) { return - 10; })
+    .attr("y", groupHeight / 2)
+    .attr("dy", ".35em")
+    .text(function(d,i) {
+      if (i % harddata.series.length === 0)
+        return harddata.labels[Math.floor(i/harddata.series.length)];
+      else
+        return ""});
+
+chart.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(" + spaceForLabels + ", " + -gapBetweenGroups/2 + ")")
+      .call(yAxis);
+
+// Draw legend
+var legendRectSize = 18,
+    legendSpacing  = 4;
+
+var legend = chart.selectAll('.legend')
+    .data(harddata.series)
+    .enter()
+    .append('g')
+    .attr('transform', function (d, i) {
+        var height = legendRectSize + legendSpacing;
+        var offset = -gapBetweenGroups/2;
+        var horz = chartWidth + 40 - legendRectSize - 150;
+        var vert = i * height - offset + config.plot.height;
+        return 'translate(' + horz + ',' + vert + ')';
+    });
+
+legend.append('rect')
+    .attr('width', legendRectSize)
+    .attr('height', legendRectSize)
+    .style('fill', function (d, i) { return color(i); })
+    .style('stroke', function (d, i) { return color(i); });
+
+legend.append('text')
+    .attr('class', 'legend')
+    .attr('x', legendRectSize + legendSpacing)
+    .attr('y', legendRectSize - legendSpacing)
+    .text(function (d) { return d.label; });
+
+</script>
